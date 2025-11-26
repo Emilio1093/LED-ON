@@ -1,0 +1,88 @@
+
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Control LED_1 (Firebase)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script type="module">
+    // Import modular Firebase SDK (v9+)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+
+
+
+    // TODO: Reemplaza con tus datos del proyecto
+    const firebaseConfig = {
+  apiKey: "AIzaSyDfLROzxqZKgdJdqrxVmCjq42qKkJDhP1k",
+  authDomain: "esp8266-d5.firebaseapp.com",
+  databaseURL: "https://esp8266-d5-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "esp8266-d5",
+  storageBucket: "esp8266-d5.firebasestorage.app",
+  messagingSenderId: "410524415476",
+  appId: "1:410524415476:web:da3ade4868846f7ca4f5a1"
+};
+
+
+
+
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    // --- UI helpers ---
+    const statusEl = document.getElementById('status');
+    const stateEl  = document.getElementById('state');
+    const btnOn    = document.getElementById('btnOn');
+    const btnOff   = document.getElementById('btnOff');
+
+    async function login() {
+      const email = document.getElementById('email').value;
+      const pass  = document.getElementById('password').value;
+      statusEl.textContent = "Iniciando sesión…";
+      try {
+        const cred = await signInWithEmailAndPassword(auth, email, pass);
+        statusEl.textContent = `Sesion iniciada: ${cred.user.email}`;
+        attachRTDB();
+      } catch (e) {
+        statusEl.textContent = `Error login: ${e.message}`;
+      }
+    }
+
+    function attachRTDB() {
+      const ledRef = ref(db, 'LED_1');
+      // Escuchar cambios
+      onValue(ledRef, (snap) => {
+        const val = snap.val();
+        stateEl.textContent = (val === true) ? "ON" : "OFF";
+      });
+
+      // Handlers botones
+      btnOn.onclick  = () => set(ledRef, true);
+      btnOff.onclick = () => set(ledRef, false);
+    }
+
+    // Exponer login al botón
+    window.login = login;
+  </script>
+</head>
+<body style="font-family: system-ui; margin: 2rem;">
+  <h1>Control LED_1</h1>
+
+  <section style="margin-bottom: 1rem;">
+    <label>Email: <input id="email" type="email" placeholder="tu_correo@dominio.com"></label><br><br>
+    <label>Contraseña: <input id="password" type="password" placeholder="********"></label><br><br>
+    <button onclick="login()">Iniciar sesión</button>
+    <div id="status" style="margin-top: .5rem; color: #555;"></div>
+  </section>
+
+  <section>
+    <p>Estado actual: <strong id="state">—</strong></p>
+    <button id="btnOn">Encender (true)</button>
+    <button id="btnOff">Apagar (false)</button>
+  </section>
+</body>
+</html>
